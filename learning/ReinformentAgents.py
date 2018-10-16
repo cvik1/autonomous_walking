@@ -47,6 +47,23 @@ class QLearningAgent():
             values.append(self.actionValue(state, action))
         return max(values) # return the best possible value from the state
 
+    def greedyPolicy(self, state):
+        """
+        Chooses the best availble action based on Q-values
+        inputs: state
+        outputs: action
+        """
+        actions = range(0, self.env.action_space.n)
+        if len(actions) == 0:
+            return None
+        values = {}
+        # gets the expected value for each action
+        for action in actions:
+            values[self.actionValue(state, action)] = action
+        keys = list(values.keys())
+        random.shuffle(keys) # shuffle so in case of a tie we choose randomly
+        return values[max(keys)] # return action with the maximum expected value
+
 class RandomAgent(QLearningAgent):
 
     def __init__(self, numTraining, env):
@@ -104,23 +121,6 @@ class EGreedyAgent(QLearningAgent):
             return random.choice(list(values.values())) # choose a random action
         else: # otherwise choose the greedy action
             return values[max(keys)]
-
-    def greedyPolicy(self, state):
-        """
-        Chooses the best availble action based on Q-values
-        inputs: state
-        outputs: action
-        """
-        actions = range(0, self.env.action_space.n)
-        if len(actions) == 0:
-            return None
-        values = {}
-        # gets the expected value for each action
-        for action in actions:
-            values[self.actionValue(state, action)] = action
-        keys = list(values.keys())
-        random.shuffle(keys) # shuffle so in case of a tie we choose randomly
-        return values[max(keys)] # return action with the maximum expected value
 
     def update(self, state, action, nextState, reward):
         """
@@ -201,6 +201,14 @@ class UBBAgent(QLearningAgent):
 
 #TODO: Deep reinforcement agent
 
-class DeepRLAgent(ReinforcementAgent):
+class DeepQAgent(ReinforcementAgent):
+    """
+    Agent that uses a neural network to learn the Q function
+    """
+    def __init__():
 
-    def __init__
+
+class DeepPolicyAgent(ReinforcementAgent):
+    """
+    Agent that uses a neural network to learn a policy directly
+    """
