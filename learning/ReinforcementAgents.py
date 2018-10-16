@@ -4,6 +4,7 @@ This file will define the class QLearningAgent as:
 An agent that estimates Q-values from experience rather than a model
 """
 import numpy as np
+import pickle
 import random
 import math
 
@@ -21,12 +22,30 @@ class QLearningAgent():
         self.Q_values{} # dictionary to hold Q values
         self.env = env #learning environment
 
-    def setQValues(self, Q_values):
+    def setQValues(self, filename):
         """
         if loading a pretrained agent, set the Q-value table to the
         table from that agent's training
         """
-        self.Q_values = Q_values
+        try:
+            f = open(filename, 'r')
+            # load the dictionary form the file
+            self.Q_values = pkl.load(f)
+            return True
+        except:
+            return False
+
+    def saveQValues(self, filename):
+        """
+        save Q values to a file for reloading at another time
+        """
+        try:
+            f = open(filename, 'w')
+            # dump the dictionary into the file
+            pickle.dump(self.Q_values, f)
+            return True
+        except:
+            return False
 
     def actionValue(self, state, action):
         """
@@ -75,14 +94,19 @@ class QLearningAgent():
         """
         the method called by the simulation script to get an action
         input: state
-        output: action from exploration or greedy policy
+        output: action from greedy policy
         """
-        # if we are still training, use the exploration policy to select actions
-        if self.steps < self.numTraining:
-            action = self.explorationPolicy(state)
-        # if we are done training, use the greedy policy to select actions
-        else:
-            action = self.greedyPolicy(state)
+        action = self.greedyPolicy(state)
+
+        return action
+
+    def explore(self, state):
+        """
+        the method called by the simulation script to get an action during exploration
+        input: state
+        output: action from exploration policy
+        """
+        action = self.explorationPolicy(state)
 
         return action
 
@@ -90,6 +114,7 @@ class QLearningAgent():
         """
         update the Q table using the reward
         """
+        # if we're still learning update the q table
         if self.steps < self.numTraining:
             nextQ = self.stateValue(nextState)
             curQ = self.actionValue(state, action)
@@ -107,12 +132,11 @@ class RandomAgent(QLearningAgent):
         self.numTraining = 2 # so we skip exploration and simply do random actions
         self.env = env
 
-    # def explorationPolicy(self, state):
-    #     """
-    #     implements a random agent's exploration policy
-    #     """
-    #     actions = range(0, self.env.action_space.n)
-    #     return random.choice(actions)
+    def explorationPolicy(self, state):
+        """
+        implements a random agent's exploration policy
+        """
+        return self.greedyPolicy
 
     def update(self, state, action, nextState, reward):
         """
@@ -160,6 +184,7 @@ class GreedyAgent(QLearningAgent):
     #     """
     #     update the Q table using the reward
     #     """
+    #     # if we're still learning update the q table
     #     if self.steps < self.numTraining:
     #         nextQ = self.stateValue(nextState)
     #         curQ = self.actionValue(state, action)
@@ -228,6 +253,7 @@ class UBBAgent(QLearningAgent):
         update the Q table using the reward
         update the visits table
         """
+        # if we're still traiing update the q table
         if self.steps < self.numTraining:
             nextQ = self.stateValue(nextState)
             curQ = self.actionValue(state, action)
