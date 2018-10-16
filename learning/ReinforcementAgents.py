@@ -1,8 +1,7 @@
 """
-ReinforcementAgent.py
-This file will define the class ReinforcementAgent as:
+ReinforcementAgents.py
+This file will define the class QLearningAgent as:
 An agent that estimates Q-values from experience rather than a model
-
 """
 import numpy as np
 import random
@@ -16,10 +15,18 @@ class QLearningAgent():
         """
         self.alpha = float(alpha) #learning rate
         self.gamma = float(gamma) #discount factor
-        self.steps = int(numTraining) #number of training episodes
+        self.steps = 0 # initialize training steps to 0
+        self.numTraining = int(numTraining) # number of training steps
 
         self.Q_values{} # dictionary to hold Q values
         self.env = env #learning environment
+
+    def setQValues(self, Q_values):
+        """
+        if loading a pretrained agent, set the Q-value table to the
+        table from that agent's training
+        """
+        self.Q_values = Q_values
 
     def actionValue(self, state, action):
         """
@@ -64,22 +71,48 @@ class QLearningAgent():
         random.shuffle(keys) # shuffle so in case of a tie we choose randomly
         return values[max(keys)] # return action with the maximum expected value
 
+    def getAction(self, state):
+        """
+        the method called by the simulation script to get an action
+        input: state
+        output: action from exploration or greedy policy
+        """
+        # if we are still training, use the exploration policy to select actions
+        if self.steps < self.numTraining:
+            action = self.explorationPolicy(state)
+        # if we are done training, use the greedy policy to select actions
+        else:
+            action = self.greedyPolicy(state)
+
+        return action
+
+    def update(self, state, action, nextState, reward):
+        """
+        update the Q table using the reward
+        """
+        if self.steps < self.numTraining:
+            nextQ = self.stateValue(nextState)
+            curQ = self.actionValue(state, action)
+            self.Q_values[(state, action)] = (self.actionValue(state, action) +
+                    self.alpha * (reward + self.gamma * nextQ - curQ))
+
+
 class RandomAgent(QLearningAgent):
 
-    def __init__(self, numTraining, env):
+    def __init__(self, env):
         """
         Initializes a random agent
         """
-        self.steps = numTraining
-
+        self.steps = 16 #initialize the steps to be larger than training steps
+        self.numTraining = 2 # so we skip exploration and simply do random actions
         self.env = env
 
-    def explorationPolicy(self, state):
-        """
-        implements a random agent's exploration policy
-        """
-        actions = range(0, self.env.action_space.n)
-        return random.choice(actions)
+    # def explorationPolicy(self, state):
+    #     """
+    #     implements a random agent's exploration policy
+    #     """
+    #     actions = range(0, self.env.action_space.n)
+    #     return random.choice(actions)
 
     def update(self, state, action, nextState, reward):
         """
@@ -88,7 +121,7 @@ class RandomAgent(QLearningAgent):
         """
         # do nothing
 
-class EGreedyAgent(QLearningAgent):
+class GreedyAgent(QLearningAgent):
 
     def __init__(self, alpha, gamma, epsilon, numTraining, env):
         """
@@ -97,7 +130,8 @@ class EGreedyAgent(QLearningAgent):
         self.alpha = float(alpha) #learning rate
         self.gamma = float(gamma) #discount factor
         self.epsilon = float(epsilon) #exploration randomization factor
-        self.steps = int(numTraining) #number of training episodes
+        self.steps = 0
+        self.numTraining = int(numTraining) #number of training steps
 
         self.env = env #learning environment
 
@@ -122,22 +156,24 @@ class EGreedyAgent(QLearningAgent):
         else: # otherwise choose the greedy action
             return values[max(keys)]
 
-    def update(self, state, action, nextState, reward):
-        """
-        update the Q table using the reward
-        """
-        nextQ = self.stateValue(nextState)
-        curQ = self.actionValue(state, action)
-        self.Q_values[(state, action)] = (self.actionValue(state, action) +
-                self.alpha * (reward + self.gamma * nextQ - curQ))
+    # def update(self, state, action, nextState, reward):
+    #     """
+    #     update the Q table using the reward
+    #     """
+    #     if self.steps < self.numTraining:
+    #         nextQ = self.stateValue(nextState)
+    #         curQ = self.actionValue(state, action)
+    #         self.Q_values[(state, action)] = (self.actionValue(state, action) +
+    #                 self.alpha * (reward + self.gamma * nextQ - curQ))
 
 class UBBAgent(QLearningAgent):
 
     def __init__(self, alpha, gamma, UCB_const, numTraining, env):
-        self.alpha = alpha
-        self.gamma = gamma
-        self.UCB_const = UCB_const
-        self.steps = numTraining
+        self.alpha = float(alpha) # learning rate
+        self.gamma = float(gamma) # discount factor
+        self.UCB_const = UCB_const # constant to calculate UCB values in exploration
+        self.steps = 0 # initialize steps to 0
+        self.numTraining = int(numTraining) # number of training steps
 
         self.Q_values = {}
         self.visits = {}
@@ -192,23 +228,10 @@ class UBBAgent(QLearningAgent):
         update the Q table using the reward
         update the visits table
         """
-        nextQ = self.stateValue(nextState)
-        curQ = self.actionValue(state, action)
-        self.Q_values[(state, action)] = (self.actionValue(state, action) +
-                    self.alpha * (reward + self.gamma * nextQ - curQ))
+        if self.steps < self.numTraining:
+            nextQ = self.stateValue(nextState)
+            curQ = self.actionValue(state, action)
+            self.Q_values[(state, action)] = (self.actionValue(state, action) +
+                        self.alpha * (reward + self.gamma * nextQ - curQ))
 
-        self.visits[(state,action)] = self.visits.get((state,action),0) + 1
-
-#TODO: Deep reinforcement agent
-
-class DeepQAgent(ReinforcementAgent):
-    """
-    Agent that uses a neural network to learn the Q function
-    """
-    def __init__():
-
-
-class DeepPolicyAgent(ReinforcementAgent):
-    """
-    Agent that uses a neural network to learn a policy directly
-    """
+            self.visits[(state,action)] = self.visits.get((state,action),0) + 1

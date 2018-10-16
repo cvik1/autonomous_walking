@@ -6,7 +6,7 @@ This file will simulate an agents interactions with the openAI gym environment
 import numpy as np
 import gym
 import argparse
-from ReinforcementAgent import *
+import ReinforcementAgent
 
 
 def main():
@@ -26,12 +26,21 @@ def main():
     agent_name =
     episodes =
     alpha =
+    gamma =
+    epsilon =
     load =
     save =
 
     # initialize the environment
     env = gym.make(env_name)
     # initialize the agent
+    if agent_name == "greedy":
+        agent = ReinforcementAgent.GreedyAgent(alpha, gamma, epsilon,
+                                    numTraining, env)
+    else if agent_name == "ucb":
+        agent = ReinforcementAgent.UCBAgent(alpha, gamma, UCB_const,
+                                    numTraining, env)
+    else if agent_name == "qlearn":
 
 
     for episode in range(episodes):
@@ -42,6 +51,10 @@ def main():
         action = None
         while not done:
             # given a state get an action from the agent
-            next_action =
+            next_action = agent.getAction(state)
             # apply the action in the environment
             next_state, reward, done, info = env.step(action)
+            # update the Q table values
+            agent.update(state, action, next_state, reward)
+
+            env.render()
