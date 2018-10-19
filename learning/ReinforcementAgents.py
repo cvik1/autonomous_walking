@@ -4,6 +4,7 @@ This file will define the class QLearningAgent as:
 An agent that estimates Q-values from experience rather than a model
 """
 import numpy as np
+import gym
 import pickle
 import random
 import math
@@ -19,7 +20,7 @@ class QLearningAgent():
         self.steps = 0 # initialize training steps to 0
         self.numTraining = int(numTraining) # number of training steps
 
-        self.Q_values{} # dictionary to hold Q values
+        self.Q_values = {} # dictionary to hold Q values
         self.env = env #learning environment
 
     def setQValues(self, filename):
@@ -157,6 +158,7 @@ class GreedyAgent(QLearningAgent):
         self.steps = 0
         self.numTraining = int(numTraining) #number of training steps
 
+        self.Q_values = {}
         self.env = env #learning environment
 
     def explorationPolicy(self, state):
@@ -180,23 +182,23 @@ class GreedyAgent(QLearningAgent):
         else: # otherwise choose the greedy action
             return values[max(keys)]
 
-    # def update(self, state, action, nextState, reward):
-    #     """
-    #     update the Q table using the reward
-    #     """
-    #     # if we're still learning update the q table
-    #     if self.steps < self.numTraining:
-    #         nextQ = self.stateValue(nextState)
-    #         curQ = self.actionValue(state, action)
-    #         self.Q_values[(state, action)] = (self.actionValue(state, action) +
-    #                 self.alpha * (reward + self.gamma * nextQ - curQ))
+    def update(self, state, action, nextState, reward):
+        """
+        update the Q table using the reward
+        """
+        # if we're still learning update the q table
+        if self.steps < self.numTraining:
+            nextQ = self.stateValue(nextState)
+            curQ = self.actionValue(state, action)
+            self.Q_values[(state, action)] = (self.actionValue(state, action) +
+                    self.alpha * (reward + self.gamma * nextQ - curQ))
 
-class UBBAgent(QLearningAgent):
+class UCBAgent(QLearningAgent):
 
     def __init__(self, alpha, gamma, UCB_const, numTraining, env):
         self.alpha = float(alpha) # learning rate
         self.gamma = float(gamma) # discount factor
-        self.UCB_const = UCB_const # constant to calculate UCB values in exploration
+        self.UCB_const = float(UCB_const) # constant to calculate UCB values in exploration
         self.steps = 0 # initialize steps to 0
         self.numTraining = int(numTraining) # number of training steps
 
@@ -248,7 +250,7 @@ class UBBAgent(QLearningAgent):
 
         return actions[index]
 
-    def update(self, state):
+    def update(self, state, action, nextState, reward):
         """
         update the Q table using the reward
         update the visits table
