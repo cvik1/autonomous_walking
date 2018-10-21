@@ -29,7 +29,7 @@ class QLearningAgent():
         table from that agent's training
         """
         try:
-            f = open(filename, 'r')
+            f = open(filename, 'rb')
             # load the dictionary form the file
             self.Q_values = pkl.load(f)
             return True
@@ -41,12 +41,17 @@ class QLearningAgent():
         save Q values to a file for reloading at another time
         """
         try:
-            f = open(filename, 'w')
+            f = open(filename, 'wb')
             # dump the dictionary into the file
             pickle.dump(self.Q_values, f)
-            return True
-        except:
-            return False
+            return (True, None)
+        except Exception as e:
+            return (False, e)
+    def getQValues(self):
+        """
+        returns Q values for debugging purposes
+        """
+        return self.Q_values
 
     def actionValue(self, state, action):
         """
@@ -80,16 +85,16 @@ class QLearningAgent():
         inputs: state
         outputs: action
         """
-        actions = range(0, self.env.action_space.n)
+        actions = list(range(0, self.env.action_space.n))
         if len(actions) == 0:
             return None
-        values = {}
+        values = []
         # gets the expected value for each action
         for action in actions:
-            values[self.actionValue(state, action)] = action
-        keys = list(values.keys())
-        random.shuffle(keys) # shuffle so in case of a tie we choose randomly
-        return values[max(keys)] # return action with the maximum expected value
+            values.append((action, self.actionValue(state, action)))
+        values = np.array(values)
+        np.random.shuffle(values) # shuffle so in case of a tie we choose randomly
+        return values[np.argmax(values[:,1]),0]
 
     def getAction(self, state):
         """
@@ -167,20 +172,21 @@ class GreedyAgent(QLearningAgent):
         inputs: state
         outputs: action
         """
-        actions = range(0, self.env.action_space.n)
+        actions = list(range(0, self.env.action_space.n))
         if len(actions) == 0:
             return None
-        values = {}
+        values = []
         # get the value for each available action from the given state
         for action in actions:
-            values[self.actionValue(state, action)] = action
-        keys = list(values.keys())
-        random.shuffle(keys) # shuffle so in case of a tie we choose randomly
+            values.append((action, self.actionValue(state, action)))
+        values = np.array(values)
+        #keys = list(values.keys())
+        np.random.shuffle(values) # shuffle so in case of a tie we choose randomly
         ran = random.random()
         if ran < self.epsilon: # if random value less than epsilon
-            return random.choice(list(values.values())) # choose a random action
+            return random.choice(values[:,0]) # choose a random action
         else: # otherwise choose the greedy action
-            return values[max(keys)]
+            return values[np.argmax(values[:,1]),0]
 
     def update(self, state, action, nextState, reward):
         """
@@ -215,7 +221,7 @@ class UCBAgent(QLearningAgent):
         outputs: action
         """
 
-        actions = range(0,self.env.action_space.n)
+        actions = list(range(0,self.env.action_space.n))
         if len(actions) == 0:
             return None
         weights = []
