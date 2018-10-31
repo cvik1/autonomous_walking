@@ -85,7 +85,7 @@ class QLearningAgent():
         inputs: state
         outputs: action
         """
-        actions = list(range(0, self.env.action_space.n))
+        actions = range(0, self.env.action_space.n)
         if len(actions) == 0:
             return None
         values = []
@@ -104,7 +104,7 @@ class QLearningAgent():
         """
         action = self.greedyPolicy(state)
 
-        return action
+        return int(action)
 
     def explore(self, state):
         """
@@ -114,7 +114,7 @@ class QLearningAgent():
         """
         action = self.explorationPolicy(state)
 
-        return action
+        return int(action)
 
     def update(self, state, action, nextState, reward):
         """
@@ -138,11 +138,18 @@ class RandomAgent(QLearningAgent):
         self.numTraining = 2 # so we skip exploration and simply do random actions
         self.env = env
 
+    def greedyPolicy(self, state):
+        """
+        implements a random agent's greedy policy
+        """
+        actions = range(self.env.action_space.n)
+        return int(random.choice(actions))
+
     def explorationPolicy(self, state):
         """
         implements a random agent's exploration policy
         """
-        return self.greedyPolicy
+        return self.greedyPolicy(state)
 
     def update(self, state, action, nextState, reward):
         """
