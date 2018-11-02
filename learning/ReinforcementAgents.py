@@ -11,14 +11,12 @@ import math
 
 class QLearningAgent():
 
-    def __init__(self, alpha, gamma, numTraining, env):
+    def __init__(self, alpha, gamma, env):
         """
         Initializes our basic Q learning agent
         """
         self.alpha = float(alpha) #learning rate
         self.gamma = float(gamma) #discount factor
-        self.steps = 0 # initialize training steps to 0
-        self.numTraining = int(numTraining) # number of training steps
 
         self.Q_values = {} # dictionary to hold Q values
         self.env = env #learning environment
@@ -60,7 +58,7 @@ class QLearningAgent():
         inputs: state, action
         outputs: Q value of state-action pair
         """
-        return self.Q_values.get((state,action), 0.0)
+        return self.Q_values.get((state,action), 0)
 
     def stateValue(self, state):
         """
@@ -121,12 +119,10 @@ class QLearningAgent():
         update the Q table using the reward
         """
         # if we're still learning update the q table
-        if self.steps < self.numTraining:
-            nextQ = self.stateValue(nextState)
-            curQ = self.actionValue(state, action)
-            self.Q_values[(state, action)] = (self.actionValue(state, action) +
-                    self.alpha * (reward + self.gamma * nextQ - curQ))
-
+        nextQ = self.stateValue(nextState)
+        curQ = self.actionValue(state, action)
+        self.Q_values[(state, action)] = (self.actionValue(state, action) +
+                self.alpha * (reward + self.gamma * nextQ - curQ))
 
 class RandomAgent(QLearningAgent):
 
@@ -156,19 +152,16 @@ class RandomAgent(QLearningAgent):
         in the random agent we don't keep a q table so this is just a
         placeholder
         """
-        # do nothing
 
 class GreedyAgent(QLearningAgent):
 
-    def __init__(self, alpha, gamma, epsilon, numTraining, env):
+    def __init__(self, alpha, gamma, epsilon, env):
         """
         Initializes an Epsilon Greedy learning agent
         """
         self.alpha = float(alpha) #learning rate
         self.gamma = float(gamma) #discount factor
         self.epsilon = float(epsilon) #exploration randomization factor
-        self.steps = 0
-        self.numTraining = int(numTraining) #number of training steps
 
         self.Q_values = {}
         self.env = env #learning environment
@@ -200,20 +193,17 @@ class GreedyAgent(QLearningAgent):
         update the Q table using the reward
         """
         # if we're still learning update the q table
-        if self.steps < self.numTraining:
-            nextQ = self.stateValue(nextState)
-            curQ = self.actionValue(state, action)
-            self.Q_values[(state, action)] = (self.actionValue(state, action) +
-                    self.alpha * (reward + self.gamma * nextQ - curQ))
+        nextQ = self.stateValue(nextState)
+        curQ = self.actionValue(state, action)
+        self.Q_values[(state, action)] = (self.actionValue(state, action) +
+                self.alpha * (reward + self.gamma * nextQ - curQ))
 
 class UCBAgent(QLearningAgent):
 
-    def __init__(self, alpha, gamma, UCB_const, numTraining, env):
+    def __init__(self, alpha, gamma, UCB_const, env):
         self.alpha = float(alpha) # learning rate
         self.gamma = float(gamma) # discount factor
         self.UCB_const = float(UCB_const) # constant to calculate UCB values in exploration
-        self.steps = 0 # initialize steps to 0
-        self.numTraining = int(numTraining) # number of training steps
 
         self.Q_values = {}
         self.visits = {}
@@ -269,10 +259,10 @@ class UCBAgent(QLearningAgent):
         update the visits table
         """
         # if we're still traiing update the q table
-        if self.steps < self.numTraining:
-            nextQ = self.stateValue(nextState)
-            curQ = self.actionValue(state, action)
-            self.Q_values[(state, action)] = (self.actionValue(state, action) +
-                        self.alpha * (reward + self.gamma * nextQ - curQ))
 
-            self.visits[(state,action)] = self.visits.get((state,action),0) + 1
+        nextQ = self.stateValue(nextState)
+        curQ = self.actionValue(state, action)
+        self.Q_values[(state, action)] = (self.actionValue(state, action) +
+                    self.alpha * (reward + self.gamma * nextQ - curQ))
+
+        self.visits[(state,action)] = self.visits.get((state,action),0) + 1

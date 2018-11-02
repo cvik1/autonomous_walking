@@ -7,6 +7,7 @@ import numpy as np
 import gym
 import argparse
 import ReinforcementAgents
+import ContinuousReinforcementAgents
 from time import sleep
 
 from pprint import pprint
@@ -23,6 +24,8 @@ def main():
                         type=int)
     parser.add_argument("-b", "--buckets", help="number of buckets to use when approximating"
                         "a continuous state space in the q-table", type=int)
+    parser.add_argument("-m", '--maxsteps', help="max number of steps per episode (default 100)",
+                        type=int)
     parser.add_argument('alpha', help="alpha value to use for learning", type=float)
     parser.add_argument('gamma', help="gamma value to use for learning", type=float)
     parser.add_argument("-c", "--constant", help="epsilon for greedy, UCB_const for UCB")
@@ -42,7 +45,7 @@ def main():
     else:
         epsilon = .3
     if args.buckets != None:
-        buckets = buckets
+        buckets = args.buckets
     if args.load != None:
         load = args.load
     else:
@@ -58,30 +61,33 @@ def main():
     # initialize the environment
     env = gym.make(env_name)
     # raise the step limit
-    env._max_episode_steps = 100
+    if args.maxsteps != None:
+        if env._max_episode_steps < args.maxsteps:
+            env._max_episode_steps = args.maxsteps
+    else:
+        if env._max_episode_steps < 100:
+            env._max_episode_steps = 100
     if env_name == "FrozenLake-v0":
         env._is_slippery=False
     # initialize the agent
     if agent_name == "greedy":
-        agent = ReinforcementAgents.GreedyAgent(alpha, gamma, epsilon,
-                                    numTraining, env)
+        agent = ReinforcementAgents.GreedyAgent(alpha, gamma, epsilon, env)
     elif agent_name == "c-greedy":
         if buckets == None:
             agent = ContinuousReinforcementAgents.GreedyAgent(alpha, gamma,
-                                    epsilon, numTraining, env, 50)
+                                    epsilon, env, 50)
         else:
             agent = ContinuousReinforcementAgents.GreedyAgent(alpha, gamma,
-                                    epsilon, numTraining, env, buckets)
+                                    epsilon, env, buckets)
     elif agent_name == "ucb":
-        agent = ReinforcementAgents.UCBAgent(alpha, gamma, UCB_const,
-                                    numTraining, env)
+        agent = ReinforcementAgents.UCBAgent(alpha, gamma, UCB_const, env)
     elif agent_name =="c-ucb":
         if buckets == None:
             agent = ContinuousReinforcementAgents.UCBAgent(alpha, gamma,
-                                    epsilon, numTraining, env, 50)
+                                    epsilon, env, 50)
         else:
             agent = ContinuousReinforcementAgents.GreedyAgent(alpha, gamma,
-                                    epsilon, numTraining, env, 50)
+                                    epsilon, env, 50)
     elif agent_name == "random":
         agent = ReinforcementAgents.RandomAgent(env)
     elif agent_name == "deep_q":
@@ -125,7 +131,7 @@ def main():
         training_data.append([steps, sum_reward])
 
         # print the statistics from the training episode
-        if (episode+1)%1000 == 0:
+        if (episode+1)%(episodes//10) == 0:
             print("Results from episode {:6d}: Total Reward={:7.2f} over {:3d} steps".format(
                     episode, sum_reward, steps))
 
@@ -153,7 +159,7 @@ def main():
 
         env.render()
 
-        sleep(.2)
+        sleep(.1)
 
     print("Results from testing episode: \n {:25s}{:5f}\n{:25s}{:5f}\n{:25s}{:3.2f}".format(
             "Steps:", steps, "Total Reward:", sum_reward, "Average Reward:", sum_reward/steps))
