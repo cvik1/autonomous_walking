@@ -21,6 +21,8 @@ def main():
     parser.add_argument("-a", "--agent", help="agent type to use")
     parser.add_argument("-n", "--numEpisodes", help="number of episodes to train (default 1000)",
                         type=int)
+    parser.add_argument("-b", "--buckets", help="number of buckets to use when approximating"
+                        "a continuous state space in the q-table", type=int)
     parser.add_argument('alpha', help="alpha value to use for learning", type=float)
     parser.add_argument('gamma', help="gamma value to use for learning", type=float)
     parser.add_argument("-c", "--constant", help="epsilon for greedy, UCB_const for UCB")
@@ -31,7 +33,7 @@ def main():
     if args.numEpisodes != None:
         episodes = args.numEpisodes
     else:
-        episodes = 100000
+        episodes = 10000
     alpha = args.alpha
     gamma = args.gamma
     if args.constant != None:
@@ -39,6 +41,8 @@ def main():
         UCB_const = args.constant
     else:
         epsilon = .3
+    if args.buckets != None:
+        buckets = buckets
     if args.load != None:
         load = args.load
     else:
@@ -61,9 +65,23 @@ def main():
     if agent_name == "greedy":
         agent = ReinforcementAgents.GreedyAgent(alpha, gamma, epsilon,
                                     numTraining, env)
+    elif agent_name == "c-greedy":
+        if buckets == None:
+            agent = ContinuousReinforcementAgents.GreedyAgent(alpha, gamma,
+                                    epsilon, numTraining, env, 50)
+        else:
+            agent = ContinuousReinforcementAgents.GreedyAgent(alpha, gamma,
+                                    epsilon, numTraining, env, buckets)
     elif agent_name == "ucb":
         agent = ReinforcementAgents.UCBAgent(alpha, gamma, UCB_const,
                                     numTraining, env)
+    elif agent_name =="c-ucb":
+        if buckets == None:
+            agent = ContinuousReinforcementAgents.UCBAgent(alpha, gamma,
+                                    epsilon, numTraining, env, 50)
+        else:
+            agent = ContinuousReinforcementAgents.GreedyAgent(alpha, gamma,
+                                    epsilon, numTraining, env, 50)
     elif agent_name == "random":
         agent = ReinforcementAgents.RandomAgent(env)
     elif agent_name == "deep_q":
@@ -133,24 +151,23 @@ def main():
         steps +=1
         sum_reward += reward
 
-        # env.render()
-        #
-        # sleep(.2)
+        env.render()
+
+        sleep(.2)
 
     print("Results from testing episode: \n {:25s}{:5f}\n{:25s}{:5f}\n{:25s}{:3.2f}".format(
             "Steps:", steps, "Total Reward:", sum_reward, "Average Reward:", sum_reward/steps))
 
-    # # save the Q values if specified from the command line
-    # if save != None:
-    #     status = agent.saveQValues(save)
-    #     if status[0]:
-    #         print("Saved Q table to {}".format(save))
-    #     else:
-    #         print(status[1])
-    #
-    # table = agent.getQValues()
-    # print(table)
+    # save the Q values if specified from the command line
+    if save != None:
+        status = agent.saveQValues(save)
+        if status[0]:
+            print("Saved Q table to {}".format(save))
+        else:
+            print(status[1])
 
+
+    # print the Q-table
     # pprint(agent.Q_values)
 
     # return all the data from each training episode and the test trail
