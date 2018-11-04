@@ -27,14 +27,14 @@ class ContinuousQLearningAgent(ReinforcementAgents.QLearningAgent):
 
         high = env.observation_space.low
         low = env.observation_space.high
-        self.buckets = [0 for i in range(len(low))]
+        self.state_buckets = [0 for i in range(len(low))]
         # make the list of buckets to approximate our states
         for i in range(len(low)):
             try:
-                self.buckets[i] = np.arange(low[i],high[i],(high[i]-low[i])/buckets)
+                self.state_buckets[i] = np.arange(low[i],high[i],(high[i]-low[i])/buckets)
             # if range is too large to compute buckets
             except:
-                self.buckets[i] = np.arange(-10, 10, 20/buckets)
+                self.state_buckets[i] = np.arange(-10, 10, 20/buckets)
 
     def setQValues(self, filename):
         """
@@ -94,7 +94,7 @@ class ContinuousQLearningAgent(ReinforcementAgents.QLearningAgent):
         # get the closest state approximation for the q-table
         state_approx = state
         for i in range(len(state)):
-            state_approx[i] = min(self.buckets[i], key=lambda x:abs(x-state[i]))
+            state_approx[i] = min(self.state_buckets[i], key=lambda x:abs(x-state[i]))
 
         action = self.greedyPolicy(tuple(state_approx))
 
@@ -109,7 +109,7 @@ class ContinuousQLearningAgent(ReinforcementAgents.QLearningAgent):
         # get the closest state approximation for the q-table
         state_approx = state
         for i in range(len(state)):
-            state_approx[i] = min(self.buckets[i], key=lambda x:abs(x-state[i]))
+            state_approx[i] = min(self.state_buckets[i], key=lambda x:abs(x-state[i]))
 
         action = self.explorationPolicy(tuple(state_approx))
 
@@ -140,14 +140,14 @@ class GreedyAgent(ContinuousQLearningAgent):
 
         high = list(env.observation_space.low)
         low = list(env.observation_space.high)
-        self.buckets = [0 for i in range(len(low))]
+        self.state_buckets = [0 for i in range(len(low))]
         # make the list of buckets to approximate our states
         for i in range(len(low)):
             try:
-                self.buckets[i] = np.arange(low[i],high[i],(high[i]-low[i])/buckets)
+                self.state_buckets[i] = np.arange(low[i],high[i],(high[i]-low[i])/buckets)
             # if range is too large to compute buckets
             except:
-                self.buckets[i] = np.arange(-10, 10, 20/buckets)
+                self.state_buckets[i] = np.arange(-10, 10, 20/buckets)
 
 
     def explorationPolicy(self, state):
@@ -180,8 +180,8 @@ class GreedyAgent(ContinuousQLearningAgent):
         state_approx = state
         nextState_approx = nextState
         for i in range(len(state)):
-            state_approx[i] = min(self.buckets[i], key=lambda x:abs(x-state[i]))
-            nextState_approx[i] = min(self.buckets[i], key=lambda x:abs(x-nextState[i]))
+            state_approx[i] = min(self.state_buckets[i], key=lambda x:abs(x-state[i]))
+            nextState_approx[i] = min(self.state_buckets[i], key=lambda x:abs(x-nextState[i]))
         # convert to tuples for the dictionary
         state_approx = tuple(state_approx)
         nextState_approx = tuple(nextState_approx)
@@ -194,7 +194,7 @@ class GreedyAgent(ContinuousQLearningAgent):
 
 class UCBAgent(ContinuousQLearningAgent):
 
-    def __init__(self, alpha, gamma, env, buckets):
+    def __init__(self, alpha, gamma, UCB_const, env, buckets):
         self.alpha = float(alpha) # learning rate
         self.gamma = float(gamma) # discount factor
         self.UCB_const = float(UCB_const) # constant to calculate UCB values in exploration
@@ -205,14 +205,14 @@ class UCBAgent(ContinuousQLearningAgent):
 
         high = env.observation_space.low
         low = env.observation_space.high
-        self.buckets = [0 for i in range(len(low))]
+        self.state_buckets = [0 for i in range(len(low))]
         # make the list of buckets to approximate our states
         for i in range(len(low)):
             try:
-                self.buckets[i] = np.arange(low[i],high[i],(high[i]-low[i])/buckets)
+                self.state_buckets[i] = np.arange(low[i],high[i],(high[i]-low[i])/buckets)
             # if range is too large to compute buckets
             except:
-                self.buckets[i] = np.arange(-10, 10, 20/buckets)
+                self.state_buckets[i] = np.arange(-10, 10, 20/buckets)
 
     def explorationPolicy(self, state):
         """
@@ -267,11 +267,11 @@ class UCBAgent(ContinuousQLearningAgent):
         state_approx = state
         nextState_approx = nextState
         for i in range(len(state)):
-            state_approx[i] = min(self.buckets[i], key=lambda x:abs(x-state[i]))
-            nextState_approx[i] = min(self.buckets[i], key=lambda x:abs(x-nextState[i]))
+            state_approx[i] = min(self.state_buckets[i], key=lambda x:abs(x-state[i]))
+            nextState_approx[i] = min(self.state_buckets[i], key=lambda x:abs(x-nextState[i]))
         # convert to tuples for the dictionary
         state_approx = tuple(state_approx)
-        nestState_approx = tuple(nextState_approx)
+        nextState_approx = tuple(nextState_approx)
 
         # update the q table
         nextQ = self.stateValue(nextState_approx)

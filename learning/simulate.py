@@ -46,6 +46,8 @@ def main():
         epsilon = .3
     if args.buckets != None:
         buckets = args.buckets
+    else:
+        buckets = None
     if args.load != None:
         load = args.load
     else:
@@ -75,7 +77,7 @@ def main():
     elif agent_name == "c-greedy":
         if buckets == None:
             agent = ContinuousReinforcementAgents.GreedyAgent(alpha, gamma,
-                                    epsilon, env, 50)
+                                    epsilon, env, 10)
         else:
             agent = ContinuousReinforcementAgents.GreedyAgent(alpha, gamma,
                                     epsilon, env, buckets)
@@ -84,10 +86,10 @@ def main():
     elif agent_name =="c-ucb":
         if buckets == None:
             agent = ContinuousReinforcementAgents.UCBAgent(alpha, gamma,
-                                    epsilon, env, 50)
+                                    UCB_const, env, 10)
         else:
-            agent = ContinuousReinforcementAgents.GreedyAgent(alpha, gamma,
-                                    epsilon, env, 50)
+            agent = ContinuousReinforcementAgents.UCBAgent(alpha, gamma,
+                                    UCB_const, env, buckets)
     elif agent_name == "random":
         agent = ReinforcementAgents.RandomAgent(env)
     elif agent_name == "deep_q":
