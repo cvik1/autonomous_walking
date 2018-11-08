@@ -135,7 +135,7 @@ def main():
         # print the statistics from the training episode
         if (episode+1)%(episodes//10) == 0:
             print("Results from episode {:6d}: Total Reward={:7.2f} over {:3d} steps".format(
-                    episode, sum_reward, steps))
+                    episode+1, sum_reward, steps))
 
 
     # do a trial episode to show the policy the agent has learned
@@ -161,7 +161,7 @@ def main():
 
         env.render()
 
-        sleep(.1)
+        sleep(.05)
 
     print("Results from testing episode: \n {:25s}{:5f}\n{:25s}{:5f}\n{:25s}{:3.2f}".format(
             "Steps:", steps, "Total Reward:", sum_reward, "Average Reward:", sum_reward/steps))

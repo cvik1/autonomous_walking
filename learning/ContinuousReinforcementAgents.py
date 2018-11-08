@@ -67,6 +67,19 @@ class ContinuousQLearningAgent(ReinforcementAgents.QLearningAgent):
         """
         return self.Q_values
 
+    def getContinuousActions(self):
+        # get the action space range
+        low = self.env.action_space.low
+        high = self.env.action_space.high
+        # initialize the arrays for actions
+        self.actions = [0 for i in range(len(low))]
+        # create the arrays of buckets for the actions
+        for i in range(len(low)):
+            try:
+                self.actions[i] = tuple(np.arange(low[i],high[i],(high[i]-low[i])/self.buckets))
+            # if range is too large to compute buckets
+            except:
+                self.actions[i] = tuple(np.arange(-10, 10, 20/self.buckets))
 
     def greedyPolicy(self, state):
         """
@@ -77,13 +90,13 @@ class ContinuousQLearningAgent(ReinforcementAgents.QLearningAgent):
         actions = range(0, self.env.action_space.n)
         if len(actions) == 0:
             return None
-        values = []
+        values = {}
         # gets the expected value for each action
         for action in actions:
-            values.append((action, self.actionValue(state, action)))
-        values = np.array(values)
-        np.random.shuffle(values) # shuffle so in case of a tie we choose randomly
-        return values[np.argmax(values[:,1]),0]
+            values[self.actionValue(state, action)] = action
+        keys = list(values.keys())
+        random.shuffle(keys) # shuffle so in case of a tie we choose randomly
+        return values[max(keys)]
 
     def getAction(self, state):
         """
@@ -98,7 +111,7 @@ class ContinuousQLearningAgent(ReinforcementAgents.QLearningAgent):
 
         action = self.greedyPolicy(tuple(state_approx))
 
-        return int(action)
+        return action
 
     def explore(self, state):
         """
@@ -113,16 +126,26 @@ class ContinuousQLearningAgent(ReinforcementAgents.QLearningAgent):
 
         action = self.explorationPolicy(tuple(state_approx))
 
-        return int(action)
+        return action
 
     def update(self, state, action, nextState, reward):
         """
         update the Q table using the reward
         """
-        # if we're still learning update the q table
-        nextQ = self.stateValue(nextState)
-        curQ = self.actionValue(state, action)
-        self.Q_values[(state, action)] = (self.actionValue(state, action) +
+        # get the approximate states for the q-table updates
+        state_approx = state
+        nextState_approx = nextState
+        for i in range(len(state)):
+            state_approx[i] = min(self.state_buckets[i], key=lambda x:abs(x-state[i]))
+            nextState_approx[i] = min(self.state_buckets[i], key=lambda x:abs(x-nextState[i]))
+        # convert to tuples for the dictionary
+        state_approx = tuple(state_approx)
+        nextState_approx = tuple(nextState_approx)
+
+        # update the q table
+        nextQ = self.stateValue(nextState_approx)
+        curQ = self.actionValue(state_approx, action)
+        self.Q_values[(state_approx, action)] = (self.actionValue(state_approx, action) +
                 self.alpha * (reward + self.gamma * nextQ - curQ))
 
 class GreedyAgent(ContinuousQLearningAgent):
@@ -159,18 +182,17 @@ class GreedyAgent(ContinuousQLearningAgent):
         actions = list(range(0, self.env.action_space.n))
         if len(actions) == 0:
             return None
-        values = []
-        # get the value for each available action from the given state
+        values = {}
+        # gets the expected value for each action
         for action in actions:
-            values.append((action, self.actionValue(state, action)))
-        values = np.array(values)
-        #keys = list(values.keys())
-        np.random.shuffle(values) # shuffle so in case of a tie we choose randomly
+            values[self.actionValue(state, action)] = action
+        keys = list(values.keys())
+        random.shuffle(keys) # shuffle so in case of a tie we choose randomly
         ran = random.random()
         if ran < self.epsilon: # if random value less than epsilon
-            return random.choice(values[:,0]) # choose a random action
+            return random.choice(list(values.values())) # choose a random action
         else: # otherwise choose the greedy action
-            return values[np.argmax(values[:,1]),0]
+            return values[max(keys)]
 
     def update(self, state, action, nextState, reward):
         """

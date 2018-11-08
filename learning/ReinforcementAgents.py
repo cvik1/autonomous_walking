@@ -86,13 +86,13 @@ class QLearningAgent():
         actions = range(0, self.env.action_space.n)
         if len(actions) == 0:
             return None
-        values = []
+        values = {}
         # gets the expected value for each action
         for action in actions:
-            values.append((action, self.actionValue(state, action)))
-        values = np.array(values)
-        np.random.shuffle(values) # shuffle so in case of a tie we choose randomly
-        return values[np.argmax(values[:,1]),0]
+            values[self.actionValue(state, action)] = action
+        keys = list(values.keys())
+        random.shuffle(keys) # shuffle so in case of a tie we choose randomly
+        return values[max(keys)]
 
     def getAction(self, state):
         """
@@ -102,7 +102,7 @@ class QLearningAgent():
         """
         action = self.greedyPolicy(state)
 
-        return int(action)
+        return action
 
     def explore(self, state):
         """
@@ -112,7 +112,7 @@ class QLearningAgent():
         """
         action = self.explorationPolicy(state)
 
-        return int(action)
+        return action
 
     def update(self, state, action, nextState, reward):
         """
@@ -175,18 +175,17 @@ class GreedyAgent(QLearningAgent):
         actions = list(range(0, self.env.action_space.n))
         if len(actions) == 0:
             return None
-        values = []
+        values = {}
         # get the value for each available action from the given state
         for action in actions:
-            values.append((action, self.actionValue(state, action)))
-        values = np.array(values)
-        #keys = list(values.keys())
-        np.random.shuffle(values) # shuffle so in case of a tie we choose randomly
+            values[self.actionValue(state, action)] = action
+        keys = list(values.keys())
+        random.shuffle(keys) # shuffle so in case of a tie we choose randomly
         ran = random.random()
         if ran < self.epsilon: # if random value less than epsilon
-            return random.choice(values[:,0]) # choose a random action
+            return values[random.choice(keys)] # choose a random action
         else: # otherwise choose the greedy action
-            return values[np.argmax(values[:,1]),0]
+            return values[max(keys)]
 
     def update(self, state, action, nextState, reward):
         """
