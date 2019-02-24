@@ -114,7 +114,7 @@ class QLearningAgent():
 
         return action
 
-    def update(self, state, action, nextState, reward):
+    def update(self, state, action, nextState, reward, done):
         """
         update the Q table using the reward
         """
@@ -147,7 +147,7 @@ class RandomAgent(QLearningAgent):
         """
         return self.greedyPolicy(state)
 
-    def update(self, state, action, nextState, reward):
+    def update(self, state, action, nextState, reward, done):
         """
         in the random agent we don't keep a q table so this is just a
         placeholder
@@ -187,7 +187,7 @@ class GreedyAgent(QLearningAgent):
         else: # otherwise choose the greedy action
             return values[max(keys)]
 
-    def update(self, state, action, nextState, reward):
+    def update(self, state, action, nextState, reward, done):
         """
         update the Q table using the reward
         """
@@ -252,7 +252,7 @@ class UCBAgent(QLearningAgent):
 
         return actions[index]
 
-    def update(self, state, action, nextState, reward):
+    def update(self, state, action, nextState, reward, done):
         """
         update the Q table using the reward
         update the visits table

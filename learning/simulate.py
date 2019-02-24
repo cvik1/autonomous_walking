@@ -8,6 +8,7 @@ import gym
 import argparse
 import ReinforcementAgents
 import ContinuousReinforcementAgents
+import DeepReinforcementAgents
 from time import sleep
 
 from pprint import pprint
@@ -92,10 +93,16 @@ def main():
                                     UCB_const, env, buckets)
     elif agent_name == "random":
         agent = ReinforcementAgents.RandomAgent(env)
-    elif agent_name == "deep_q":
-        raise Exception('Deep qlearning not yet implemented ')
-    elif agent_name == "deep_p":
-        raise Exception('Deep policy learning not yet implemented')
+    elif agent_name == "taxi":
+        agent = DeepReinforcementAgents.TaxiAgent(alpha, gamma, epsilon, env)
+    elif agent_name == "cartpole":
+        agent = DeepReinforcementAgents.CartPoleAgent(alpha, gamma, epsilon, env)
+    elif agent_name == "mountaincar":
+        agent = DeepReinforcementAgents.MountainCarAgent(alpha, gamma, epsilon, env)
+    elif agent_name == "lunarlander":
+        agent = DeepReinforcementAgents.LunarLanderAgent(alpha, gamma, epsilon, env)
+
+
     # if we are loading Q values for a RL agent
     if agent_name in ['greedy', 'ucb'] and load != None:
         agent.setQValues(load)
@@ -105,6 +112,7 @@ def main():
 
     # create array to hold all training data
     training_data = []
+    policy_data = []
     # do training episodes
     for episode in range(episodes):
         # initialize environment variables
@@ -115,15 +123,31 @@ def main():
 
         steps = 0
         sum_reward = 0
-        # run until we reach the goal or make one million steps
-        while not done: #or steps < 1000000:
+        # run a real episode to check the learning progress every 25 episodes
+        if (episodes+1)%25 == 0:
+            policy_steps = 0
+            policy_sum_reward = 0
+            while not done:
+                # given a state get an action from the agent
+                action = agent.getAction(state)
+                # apply the action in the environment
+                next_state, reward, done, info = env.step(action)
+                #update state variable
+                state = next_state
+
+                policy_steps +=1
+                policy_sum_reward += reward
+            policy_data.append([policy_steps, policy_sum_reward])
+
+        # run a training episode every iteration of the loop
+        while not done:
             # given a state get an action from the agent
             action = agent.explore(state)
             # apply the action in the environment
             next_state, reward, done, info = env.step(action)
 
             # update the Q table values
-            agent.update(state, action, next_state, reward)
+            agent.update(state, action, next_state, reward, done)
             # update the state variable
             state = next_state
 
@@ -136,6 +160,12 @@ def main():
         if (episode+1)%(episodes//10) == 0:
             print("Results from episode {:6d}: Total Reward={:7.2f} over {:3d} steps".format(
                     episode+1, sum_reward, steps))
+        # run a batch training on our deep reinforcement agents
+        if (episodes%25) == 0:
+            try:
+                agent.train_model()
+            except:
+                pass
 
 
     # do a trial episode to show the policy the agent has learned
@@ -179,7 +209,7 @@ def main():
     # pprint(agent.Q_values)
 
     # return all the data from each training episode and the test trail
-    return (training_data, [steps, sum_reward])
+    return (policy_data, training_data)
 
 
 if __name__ == "__main__":

@@ -10,12 +10,13 @@ import gym
 import pickle
 import random
 import math
+import itertools
 
 import ReinforcementAgents
 
 class ContinuousQLearningAgent(ReinforcementAgents.QLearningAgent):
 
-    def __init__(self, alpha, gamma, env, buckets):
+    def __init__(self, alpha, gamma, env, buckets, a_buckets):
         """
         Initializes our basic ContinuousQLearningAgent
         """
@@ -24,6 +25,9 @@ class ContinuousQLearningAgent(ReinforcementAgents.QLearningAgent):
 
         self.Q_values = {} # dictionary to hold Q values
         self.env = env #learning environment
+        self.buckets = buckets # number of buckets for discretizing state space
+        self.a_buckets = a_buckets # number of buckets for discretizing actions
+        self.disc_actions = self.getDiscreteActions(5) # array to hold discretized actions
 
         high = env.observation_space.low
         low = env.observation_space.high
@@ -67,19 +71,35 @@ class ContinuousQLearningAgent(ReinforcementAgents.QLearningAgent):
         """
         return self.Q_values
 
-    def getContinuousActions(self):
+    def getDiscreteActions(self, buckets):
+        """
+        Gets a list of discretized actions for our agent to choose from
+        """
+        # set the number of discretization buckets
+        # buckets = 4
         # get the action space range
-        low = self.env.action_space.low
-        high = self.env.action_space.high
-        # initialize the arrays for actions
-        self.actions = [0 for i in range(len(low))]
-        # create the arrays of buckets for the actions
-        for i in range(len(low)):
-            try:
-                self.actions[i] = tuple(np.arange(low[i],high[i],(high[i]-low[i])/self.buckets))
-            # if range is too large to compute buckets
-            except:
-                self.actions[i] = tuple(np.arange(-10, 10, 20/self.buckets))
+        try:
+            low = self.env.action_space.low
+            high = self.env.action_space.high
+            # initialize the arrays for actions
+            action_buckets = [0 for i in range(len(low))]
+            # create the arrays of buckets for the actions
+            for i in range(len(low)):
+                try:
+                    action_buckets[i] = tuple(np.arange(low[i],high[i],(high[i]-low[i])/buckets))
+                # if range is too large to compute buckets
+                except:
+                    action_buckets[i] = tuple(np.arange(-2, 2, 4/buckets))
+            if len(action_buckets) == 1:
+                disc_actions = action_buckets[0]
+            elif len(action_buckets) == 2:
+                # get all possible combinations of actions
+                disc_actions = list(itertools.product(action_buckets[0],
+                                                        action_buckets[1]))
+            # return the discretized actions
+            return disc_actions
+        except:
+            return None
 
     def greedyPolicy(self, state):
         """
@@ -87,7 +107,10 @@ class ContinuousQLearningAgent(ReinforcementAgents.QLearningAgent):
         inputs: state
         outputs: action
         """
-        actions = range(0, self.env.action_space.n)
+        try:
+            actions = range(0, self.env.action_space.n)
+        except:
+            actions = self.disc_actions
         if len(actions) == 0:
             return None
         values = {}
@@ -128,7 +151,7 @@ class ContinuousQLearningAgent(ReinforcementAgents.QLearningAgent):
 
         return action
 
-    def update(self, state, action, nextState, reward):
+    def update(self, state, action, nextState, reward, done):
         """
         update the Q table using the reward
         """
@@ -160,6 +183,7 @@ class GreedyAgent(ContinuousQLearningAgent):
 
         self.Q_values = {}
         self.env = env #learning environment
+        self.disc_actions = self.getDiscreteActions(5) # array to hold discretized actions
 
         high = list(env.observation_space.low)
         low = list(env.observation_space.high)
@@ -179,7 +203,10 @@ class GreedyAgent(ContinuousQLearningAgent):
         inputs: state
         outputs: action
         """
-        actions = list(range(0, self.env.action_space.n))
+        try:
+            actions = range(0, self.env.action_space.n)
+        except:
+            actions = self.disc_actions
         if len(actions) == 0:
             return None
         values = {}
@@ -194,7 +221,7 @@ class GreedyAgent(ContinuousQLearningAgent):
         else: # otherwise choose the greedy action
             return values[max(keys)]
 
-    def update(self, state, action, nextState, reward):
+    def update(self, state, action, nextState, reward, done):
         """
         update the Q table using the reward
         """
@@ -224,6 +251,7 @@ class UCBAgent(ContinuousQLearningAgent):
         self.Q_values = {}
         self.visits = {}
         self.env = env
+        self.disc_actions = self.getDiscreteActions(5) # array to hold discretized actions
 
         high = env.observation_space.low
         low = env.observation_space.high
@@ -245,7 +273,10 @@ class UCBAgent(ContinuousQLearningAgent):
         outputs: action
         """
 
-        actions = list(range(0,self.env.action_space.n))
+        try:
+            actions = range(0, self.env.action_space.n)
+        except:
+            actions = self.disc_actions
         if len(actions) == 0:
             return None
         weights = []
@@ -280,7 +311,7 @@ class UCBAgent(ContinuousQLearningAgent):
 
         return actions[index]
 
-    def update(self, state, action, nextState, reward):
+    def update(self, state, action, nextState, reward, done):
         """
         update the Q table using the reward
         update the visits table
